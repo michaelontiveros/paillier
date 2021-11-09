@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include "paillier.h"
 
-// compile using the following command
+// compile using the command
 // c++ main.cpp paillier.cpp -o main -lgmp
 
 int main() {

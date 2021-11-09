@@ -1,9 +1,9 @@
 class Paillier {
 public:
-  mp_bitcnt_t        keysize;
+  mp_bitcnt_t        keysize; // 1024 bits per prime p, q
   mpz_t              pk;      // public key p * q    
   mpz_t              pk2;     // pk^2
-  uint8_t            str[255];
+  uint8_t            str[255];// 255 = (2 * keysize) / 8 - 1
   mpz_t              pt;      // plaintext
   mpz_t              ct;      // ciphertext
   

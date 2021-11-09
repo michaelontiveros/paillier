@@ -29,31 +29,27 @@ void Paillier::genkeys() {
   
   printf("\nprime p\n");
   mpz_out_str(stdout, 16, p);
-  printf("\n\n");
 
   mpz_t q;
   mpz_init(q);
   mpz_urandomb(q, state, keysize);
   mpz_nextprime(q, q);
 
-  printf("prime q\n");
+  printf("\n\nprime q\n");
   mpz_out_str(stdout, 16, q);
-  printf("\n\n");
 
   mpz_mul(pk,  p,  q);
   mpz_mul(pk2, pk, pk);
 
-  printf("public key\n");
+  printf("\n\npublic key\n");
   mpz_out_str(stdout, 16, pk);
-  printf("\n\n");
 
   mpz_sub_ui(p, p, 1);
   mpz_sub_ui(q, q, 1);
   mpz_mul(  sk, p, q);
 
-  printf("secret key\n");
+  printf("\n\nsecret key\n");
   mpz_out_str(stdout, 16, sk);
-  printf("\n\n");
 
   mpz_invert(ski, sk, pk);
 
@@ -62,26 +58,23 @@ void Paillier::genkeys() {
 }
 
 void Paillier::writes() {
-  uint16_t k;
-  
-  for(k = 0; k < 255; k++) {
-    str[k] = 0;
-  }
-  
-  printf("write a message and press enter\n");
+  printf("\n\nwrite a message and press enter\n");
+  uint8_t k = 0;
   uint8_t character = getchar();
-  k = 0;
   while(k < 255 && character != '\n') {
     str[k] = character;
     character = getchar();
     k++;
   }
-  printf("\n");
+  while(k < 255) {
+    str[k] = 0;
+    k++;
+  }
 }
 
 void Paillier::encrypts() {
   if(mpz_cmp_ui(pk, 0) == 0) {
-    printf("missing public key\n\n");
+    printf("\nmissing public key\n\n");
     return;
   }
 
@@ -100,14 +93,11 @@ void Paillier::encrypts() {
     mpz_gcd(gcd, random, pk);
   }
 
-  printf("plaintext\n");
+  printf("\nplaintext\n");
   printstr();
   mpz_out_str(stdout, 16, pt);
-  printf("\n\n");
-
-  printf("random number\n");
+  printf("\n\nrandom number\n");
   mpz_out_str(stdout, 16, random);
-  printf("\n\n");
 
   mpz_add_ui(pk, pk, 1);
   mpz_powm(ct, pk, pt, pk2);
@@ -116,9 +106,8 @@ void Paillier::encrypts() {
   mpz_mul(ct, ct, random);
   mpz_mod(ct, ct, pk2);
 
-  printf("ciphertext\n");
+  printf("\n\nciphertext\n");
   mpz_out_str(stdout, 16, ct);
-  printf("\n\n");
 
   mpz_clear(random);
   mpz_clear(gcd);
@@ -126,7 +115,7 @@ void Paillier::encrypts() {
 
 void Paillier::decrypts() {
   if(mpz_cmp_ui(sk, 0) == 0) {
-    printf("missing secret key\n\n");
+    printf("\n\nmissing secret key\n\n");
     return;
   }
 
@@ -138,14 +127,14 @@ void Paillier::decrypts() {
 
   num2str(pt, str);
 
-  printf("decryption\n");
+  printf("\n\ndecryption\n");
   printstr();
   mpz_out_str(stdout, 16, pt);
   printf("\n\n");
 }
 
 void Paillier::printstr() {
-  uint16_t k;
+  uint8_t k;
 
   for(k = 0; k < 255; k++) {
     printf("%c", str[k]);
@@ -164,7 +153,8 @@ void Paillier::clear() {
 }
 
 void str2num(uint8_t *str, mpz_t &num) {
-  uint16_t k;
+  uint8_t k;
+  
   mpz_set_ui(num, 0);
   for(k = 0; k < 255; k++) {
     mpz_mul_ui(num, num, 256);
@@ -173,7 +163,8 @@ void str2num(uint8_t *str, mpz_t &num) {
 }
 
 void num2str(mpz_t &num, uint8_t *str) {
-  uint16_t k;
+  uint8_t k;
+  
   mpz_t byte;
   mpz_init_set_ui(byte, 256);
   mpz_t character;
