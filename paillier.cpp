@@ -27,34 +27,37 @@ void Paillier::genkeys() {
   mpz_urandomb( p, state, keysize);
   mpz_nextprime(p, p);
   
-  printf("\nprime p\n");
-  mpz_out_str(stdout, 16, p);
-
   mpz_t q;
   mpz_init(q);
   mpz_urandomb(q, state, keysize);
   mpz_nextprime(q, q);
-
-  printf("\n\nprime q\n");
-  mpz_out_str(stdout, 16, q);
-
+  
   mpz_mul(pk,  p,  q);
   mpz_mul(pk2, pk, pk);
-
-  printf("\n\npublic key\n");
-  mpz_out_str(stdout, 16, pk);
-
+  
   mpz_sub_ui(p, p, 1);
   mpz_sub_ui(q, q, 1);
   mpz_mul(  sk, p, q);
-
-  printf("\n\nsecret key\n");
-  mpz_out_str(stdout, 16, sk);
-
+  
   mpz_invert(ski, sk, pk);
 
+  printkeys(p, q);
   mpz_clear(p);
   mpz_clear(q);
+}
+
+void Paillier::printkeys(mpz_t &p, mpz_t &q) {
+  printf(     "\nprime p\n");
+  mpz_out_str(stdout, 16, p);
+  
+  printf(   "\n\nprime q\n");
+  mpz_out_str(stdout, 16, q);
+  
+  printf("\n\npublic key\n");
+  mpz_out_str(stdout, 16, pk);
+  
+  printf("\n\nsecret key\n");
+  mpz_out_str(stdout, 16, sk);
 }
 
 void Paillier::writes() {
@@ -80,37 +83,41 @@ void Paillier::encrypts() {
 
   str2num(str, pt);
 
-  mpz_t random;
-  mpz_init(random);
-  mpz_urandomm(random, state, pk);
+  mpz_t r;
+  mpz_init(r);
+  mpz_urandomm(r, state, pk);
 
   mpz_t gcd;
   mpz_init(gcd);
-  mpz_gcd(gcd, random, pk);
+  mpz_gcd(gcd, r, pk);
   while(mpz_cmp_ui(gcd, 1) != 0) {
     printf("gcd(r, n) != 1\n");
-    mpz_urandomm(random, state, pk);
-    mpz_gcd(gcd, random, pk);
+    mpz_urandomm(r, state, pk);
+    mpz_gcd(gcd, r, pk);
   }
-
-  printf("\nplaintext\n");
-  printstr();
-  mpz_out_str(stdout, 16, pt);
-  printf("\n\nrandom number\n");
-  mpz_out_str(stdout, 16, random);
-
+  
   mpz_add_ui(pk, pk, 1);
   mpz_powm(ct, pk, pt, pk2);
   mpz_sub_ui(pk, pk, 1);
-  mpz_powm(random, random, pk, pk2);
-  mpz_mul(ct, ct, random);
+  mpz_powm(r, r, pk, pk2);
+  mpz_mul(ct, ct, r);
   mpz_mod(ct, ct, pk2);
+  
+  printenc(r);
+  mpz_clear(r);
+  mpz_clear(gcd);
+}
 
+void Paillier::printenc(mpz_t &r) {
+  printf("\nplaintext\n");
+  printstr();
+  mpz_out_str(stdout, 16, pt);
+  
+  printf("\n\nrandom number\n");
+  mpz_out_str(stdout, 16, r);
+  
   printf("\n\nciphertext\n");
   mpz_out_str(stdout, 16, ct);
-
-  mpz_clear(random);
-  mpz_clear(gcd);
 }
 
 void Paillier::decrypts() {
@@ -126,7 +133,10 @@ void Paillier::decrypts() {
   mpz_mod(   pt, pt, pk);
 
   num2str(pt, str);
+  printdec();
+}
 
+void Paillier::printdec() {
   printf("\n\ndecryption\n");
   printstr();
   mpz_out_str(stdout, 16, pt);

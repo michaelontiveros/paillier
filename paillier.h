@@ -22,6 +22,10 @@ private:
   mpz_t              ski;     // 1 / sk (mod pk)
 
   void setstate();
+  
+  void printkeys(mpz_t &p, mpz_t &q);
+  void printenc(mpz_t &r);
+  void printdec();
   void printstr();
 };
 
