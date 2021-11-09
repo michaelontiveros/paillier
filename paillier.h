@@ -14,7 +14,7 @@ public:
   void writes();
   void encrypts();
   void decrypts();
-  void clear();
+  void clears();
 
 private:
   gmp_randstate_t    state;

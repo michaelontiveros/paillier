@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include "paillier.h"
 
-// compile using the command
+// compile with the command
 // c++ main.cpp paillier.cpp -o main -lgmp
 
 int main() {
@@ -13,7 +13,7 @@ int main() {
   alice.writes();
   alice.encrypts();
   alice.decrypts();
-  alice.clear();
+  alice.clears();
 
   return 0;
 }

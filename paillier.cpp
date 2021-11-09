@@ -142,7 +142,7 @@ void Paillier::printstr() {
   printf("\n");
 }
 
-void Paillier::clear() {
+void Paillier::clears() {
   gmp_randclear(state);
   mpz_clear(pk);
   mpz_clear(pk2);
