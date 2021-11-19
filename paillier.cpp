@@ -13,7 +13,9 @@ Paillier::Paillier() {
   mpz_init_set_ui(pt , 0);
   mpz_init_set_ui(ct , 0);
 
-  printf("\nthe paillier encryption scheme\n");
+  for(uint16_t k = 0; k < 256; k++) {
+    msg[k] = 0;
+  }
 }
 
 void Paillier::setstate() {
@@ -47,7 +49,8 @@ void Paillier::genkeys() {
 }
 
 void Paillier::printkeys(mpz_t &p, mpz_t &q) {
-  printf(     "\nprime p\n");
+  printf("\ngenerated...");
+  printf(     "\n\nprime p\n");
   mpz_out_str(stdout, 16, p);
   
   printf(   "\n\nprime q\n");
@@ -60,19 +63,34 @@ void Paillier::printkeys(mpz_t &p, mpz_t &q) {
   mpz_out_str(stdout, 16, sk);
 }
 
+void Paillier::sendskey(Paillier &alice) {
+  mpz_set(   alice.pk,  pk);
+  mpz_set(   alice.pk2, pk2);
+  mpz_set_ui(alice.sk,  0);
+  mpz_set_ui(alice.ski, 0);
+}
+
 void Paillier::writes() {
-  printf("\n\nwrite a message and press enter\n");
-  uint8_t k = 0;
+  printf("\nwrite a message, then press enter\n");
+  
+  uint16_t k = 0;
   uint8_t character = getchar();
-  while(k < 255 && character != '\n') {
-    str[k] = character;
+  
+  while(character == '\n') {
+    character = getchar();
+  }
+  
+  while(k < 256 && character != '\n') {
+    msg[k] = character;
     character = getchar();
     k++;
   }
-  while(k < 255) {
-    str[k] = 0;
+  while(k < 256) {
+    msg[k] = 0;
     k++;
   }
+
+  msg2pt(msg, pt, pk);
 }
 
 void Paillier::encrypts() {
@@ -80,8 +98,6 @@ void Paillier::encrypts() {
     printf("\nmissing public key\n\n");
     return;
   }
-
-  str2num(str, pt);
 
   mpz_t r;
   mpz_init(r);
@@ -103,18 +119,14 @@ void Paillier::encrypts() {
   mpz_mul(ct, ct, r);
   mpz_mod(ct, ct, pk2);
   
-  printenc(r);
   mpz_clear(r);
   mpz_clear(gcd);
 }
 
-void Paillier::printenc(mpz_t &r) {
+void Paillier::printenc() {
   printf("\nplaintext\n");
-  printstr();
+  printmsg();
   mpz_out_str(stdout, 16, pt);
-  
-  printf("\n\nrandom number\n");
-  mpz_out_str(stdout, 16, r);
   
   printf("\n\nciphertext\n");
   mpz_out_str(stdout, 16, ct);
@@ -132,22 +144,19 @@ void Paillier::decrypts() {
   mpz_mul(   pt, pt, ski);
   mpz_mod(   pt, pt, pk);
 
-  num2str(pt, str);
-  printdec();
+  pt2msg(pt, msg);
 }
 
 void Paillier::printdec() {
-  printf("\n\ndecryption\n");
-  printstr();
+  printf("\ndecryption\n");
+  printmsg();
   mpz_out_str(stdout, 16, pt);
   printf("\n\n");
 }
 
-void Paillier::printstr() {
-  uint8_t k;
-
-  for(k = 0; k < 255; k++) {
-    printf("%c", str[k]);
+void Paillier::printmsg() {
+  for(uint16_t k = 0; k < 256; k++) {
+    printf("%c", msg[k]);
   }
   printf("\n");
 }
@@ -162,32 +171,113 @@ void Paillier::clears() {
   mpz_clear(ct);
 }
 
-void str2num(uint8_t *str, mpz_t &num) {
-  uint8_t k;
+void ot(Paillier &alice, Paillier &bob) {
+  mpz_t pt0, pt1, ct0, ct1, r0, r1;
+  mpz_init(pt0);
+  mpz_init(pt1);
+  mpz_init(ct0);
+  mpz_init(ct1);
+  mpz_init( r0);
+  mpz_init( r1);
+
+  printf("\n\n-------");
+  printf(  "\n| bob |");
+  printf(  "\n-------");
+  bob.genkeys();
+  bob.sendskey(alice);
+
+  printf("\n\ntype 0 (or 1) to read alice's 0th (or 1st) message,");
+  printf(" then press enter\n");
+  mpz_set_ui(bob.pt, getchar() % 2);
+  bob.encrypts();
+  bob.printenc();
+
+  mpz_urandomm(r0, alice.state, alice.pk);
+  mpz_urandomm(r1, alice.state, alice.pk);
   
-  mpz_set_ui(num, 0);
-  for(k = 0; k < 255; k++) {
-    mpz_mul_ui(num, num, 256);
-    mpz_add_ui(num, num, str[k]);
-  }
+  mpz_set_ui(alice.pt, 0);
+  alice.encrypts();
+  mpz_set(ct0, alice.ct);
+  mpz_mul(ct0, ct0, bob.ct);
+  mpz_mod(ct0, ct0, alice.pk2);
+  mpz_powm(ct0, ct0, r0, alice.pk2);
+
+  mpz_sub_ui(alice.pk, alice.pk, 1);
+  mpz_set(alice.pt, alice.pk);
+  mpz_add_ui(alice.pk, alice.pk, 1);
+  alice.encrypts();
+  mpz_set(ct1, alice.ct);
+  mpz_mul(ct1, ct1, bob.ct);
+  mpz_mod(ct1, ct1, alice.pk2);
+  mpz_powm(ct1, ct1, r1, alice.pk2);
+
+  printf("\n\n---------");
+  printf(  "\n| alice |");
+  printf(  "\n---------");
+  alice.writes();
+  alice.encrypts();
+  mpz_mul(ct0, ct0, alice.ct);
+  mpz_mod(ct0, ct0, alice.pk2);
+  alice.writes();
+  alice.encrypts();
+  mpz_mul(ct1, ct1, alice.ct);
+  mpz_mod(ct1, ct1, alice.pk2);
+ 
+  printf(  "\n-------");
+  printf(  "\n| bob |");
+  printf(  "\n-------");
+  mpz_set(bob.ct, ct0);
+  bob.decrypts();
+  bob.printdec();
+
+  mpz_set(bob.ct, ct1);
+  bob.decrypts();
+  bob.printdec();
+
+  alice.clears();
+  bob.clears();
+
+  mpz_clear(pt0);
+  mpz_clear(pt1);
+  mpz_clear(ct0);
+  mpz_clear(ct1);
+  mpz_clear( r0);
+  mpz_clear( r1);
 }
 
-void num2str(mpz_t &num, uint8_t *str) {
-  uint8_t k;
+void msg2pt(uint8_t *msg, mpz_t &pt, mpz_t &pk) {
+  mpz_t ptcopy;
+  mpz_init_set_ui(ptcopy, 0);
   
-  mpz_t byte;
-  mpz_init_set_ui(byte, 256);
-  mpz_t character;
-  mpz_init(character);
-  mpz_t numcopy;
-  mpz_init_set(numcopy, num);
-  for(k = 0; k < 255; k++) {
-    mpz_mod(character, numcopy, byte);
-    str[254 - k] = mpz_get_ui(character);
-    mpz_sub(   numcopy, numcopy, character);
-    mpz_cdiv_q(numcopy, numcopy, byte);
+  for(uint16_t k = 0; k < 256; k++) {
+    if(mpz_cmp(ptcopy, pk) < 0) {
+      mpz_set(pt, ptcopy);
+      mpz_mul_ui(ptcopy, ptcopy, 256);
+      mpz_add_ui(ptcopy, ptcopy, msg[k]);
+    }
   }
+
+  if(mpz_cmp(ptcopy, pk) < 0) {
+    mpz_set(pt, ptcopy);
+  }
+
+  mpz_clear(ptcopy);
+}
+
+void pt2msg(mpz_t &pt, uint8_t *msg) {
+  mpz_t byte, character, ptcopy;;
+  mpz_init_set_ui(byte, 256);
+  mpz_init(character);
+  mpz_init_set(ptcopy, pt);
+  
+  for(uint16_t k = 0; k < 256; k++) {
+    mpz_mod(character, ptcopy, byte);
+    msg[255 - k] = mpz_get_ui(character);
+    mpz_sub(   ptcopy, ptcopy, character);
+    mpz_cdiv_q(ptcopy, ptcopy, byte);
+  }
+  
   mpz_clear(byte);
   mpz_clear(character);
-  mpz_clear(numcopy);
+  mpz_clear(ptcopy);
 }

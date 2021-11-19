@@ -10,13 +10,12 @@
 // ./main
 
 int main() {
-  Paillier alice;
+  printf("\n\"2 choose 1\" oblivious transfer");
+  printf("\nfrom the paillier encryption scheme");
   
-  alice.genkeys();
-  alice.writes();
-  alice.encrypts();
-  alice.decrypts();
-  alice.clears();
+  Paillier alice, bob;
+  
+  ot(alice, bob);
 
   return 0;
 }
